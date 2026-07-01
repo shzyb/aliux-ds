@@ -108,7 +108,7 @@ primitives; font weight is expressed via Inter's named styles.
 
 ## Phase 1 — Component Loop
 
-Completed: **10 / 61** (+ 1 pending: Bubble, skipped per your call — see below)
+Completed: **12 / 61** (+ 9 pending, skipped: Bubble, Calendar, Card, Carousel, Chart, Collapsible, Combobox, Command, Context Menu — see below)
 
 **Bugs found and fixed while building Alert (2026-07-01), in order surfaced:** the original
 script left an incomplete build — only `Style=Default` existed as a loose component (never
@@ -151,13 +151,15 @@ every future component. The Button loading spinner is the one exception, kept as
 | — | ~~Bubble~~ | *(skipped)* | **Skipped per your call.** Couldn't verify its variant list against the live docs (search summaries suggested 7 variants — Primary/Secondary/Muted/Tinted/Outlined/Destructive/Ghost — but this wasn't a confirmed quote from the source). Circle back when you can paste the doc content, or when live fetching is available. |
 | 9 | Button | [`figma-scripts/09-button.js`](figma-scripts/09-button.js) | Icon/Spinner/Label, sizes built from real padding tokens rather than hardcoded heights (reproduces shadcn's documented h-9/h-8/h-10 exactly). Variant `Style`: Default/Destructive/Outline/Secondary/Ghost/Link. Variant `Size`: Default/Sm/Lg/Icon. Variant `State`: Default/Hover/Focused/Disabled — modeled as a real variant (not a boolean) per your feedback, matching shadcn's actual hover/focus-visible/disabled CSS: Hover fades bg-colored styles to 90% paint opacity or tints bg-less styles to `bg/muted` (whichever matches the style, since fading an already-transparent bg would show nothing); Focused adds a 2px `border/focus` ring; Disabled sets `root.opacity = 0.5`, matching shadcn's literal `disabled:opacity-50` — replaces the earlier visibility-bound scrim hack entirely. 6x4x4 = 96 variants total. Booleans: `Has Icon` (placeholder chip, not bound on Icon size), `Loading` (a real ring via `EllipseNode.arcData` — Figma's `vectorPaths` doesn't support SVG arc commands, which is what first broke this). Flagged: some sources mention additional icon-xs/icon-sm/icon-lg sizes that couldn't be confirmed against live docs — not built; ask if you want them added. |
 | 10 | Button Group | [`figma-scripts/10-button-group.js`](figma-scripts/10-button-group.js) | One outer bordered/rounded frame (clipped) containing 3 generic ghost-style segments divided by thin separator lines — follows shadcn's own `ButtonGroupSeparator` pattern rather than trying to collapse individual button borders. Variant `Orientation`: Horizontal/Vertical. No booleans (structural anatomy piece; mixing in real Button/Input instances is left to actual usage). |
+| — | ~~Calendar, Card, Carousel, Chart, Collapsible, Combobox, Command, Context Menu~~ | *(skipped)* | **Skipped per your request** to jump ahead to Checkbox and Data Table. Will circle back. |
+| 11 | Checkbox | [`figma-scripts/11-checkbox.js`](figma-scripts/11-checkbox.js) | Single 16x16 box. Variant `State`: Unchecked/Checked/Indeterminate (Checked and Indeterminate both fill with `interactive/default` per shadcn's real behavior — they're only visually distinguished by their placeholder chip, which you'll swap for a real check/minus icon). Boolean: `Disabled` (visibility-bound scrim). Flagged: shadcn's `rounded-[4px]` isn't one of Phase 0's radius stops — using `radius/sm` (6px) as nearest. |
+| 12 | Data Table | [`figma-scripts/12-data-table.js`](figma-scripts/12-data-table.js) | shadcn's "Data Table" isn't actually a standalone styled component — it's a *recipe* combining the plain `Table` (not yet built) with TanStack Table logic, plus Button/Input/Checkbox. Built as a single Component showing the canonical anatomy: toolbar (filter input + column-visibility button placeholders) → table (header + 3 rows, each with a **real Checkbox instance** — the first cross-component reuse in this library, not another placeholder) → footer (selection count + Previous/Next pager placeholders). Boolean: `Show Toolbar`. **Depends on `11-checkbox.js` having been run first.** |
 
 No new semantic tokens were needed for any of these — all bind exclusively to existing
 `fg/*`, `bg/*`, `border/*`, `interactive/*`, `surface/*` and `spacing/*`, `radius/*`, `border-width/*` primitives.
 
-Remaining (51, + Bubble pending):
-Calendar, Card, Carousel, Chart,
-Checkbox, Collapsible, Combobox, Command, Context Menu, Data Table, Date Picker,
+Remaining (47, + 9 pending — Bubble, Calendar, Card, Carousel, Chart, Collapsible, Combobox, Command, Context Menu):
+Date Picker,
 Dialog, Direction, Drawer, Dropdown Menu, Empty, Field, Hover Card, Input,
 Input Group, Input OTP, Item, Kbd, Label, Marker, Menubar, Message,
 Message Scroller, Native Select, Navigation Menu, Pagination, Popover, Progress,
