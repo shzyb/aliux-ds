@@ -5,7 +5,7 @@ console (Plugins > Development > Open Console). No manifest, no plugin UI.
 
 ## Phase 0 — Variables Foundation
 
-Status: **script written, awaiting your approval before Phase 1 starts.**
+Status: **approved.** ✅
 
 Script: [`figma-scripts/phase-0-variables.js`](figma-scripts/phase-0-variables.js)
 
@@ -77,7 +77,34 @@ Flagged for approval:
    (mirroring shadcn's actual monochrome `--ring`) rather than a brand color —
    flag if you want focus rings colorized instead.
 
-**Do not proceed to Phase 1 until this is explicitly approved.**
+## Phase 0b — Text Styles
+
+Status: **script written, ready to run.**
+
+Script: [`figma-scripts/phase-0b-text-styles.js`](figma-scripts/phase-0b-text-styles.js)
+(run `phase-0-variables.js` first — this script reads the `Primitives` collection it creates)
+
+Font family: **Inter**, on Figma Text Styles (not variables — Figma's stable
+Plugin API doesn't support binding `fontName`/font-style to a variable, only
+`fontSize`, `lineHeight`, `letterSpacing`, `paragraphSpacing`, `paragraphIndent`).
+`fontSize` and `lineHeight` are bound to the Phase 0 `font-size/*` / `line-height/*`
+primitives; font weight is expressed via Inter's named styles.
+
+| Text style | Size (px / line-height) | Inter weight |
+|---|---|---|
+| `Display` | 48 / 48 | Bold |
+| `Heading/H1` | 36 / 40 | Bold |
+| `Heading/H2` | 30 / 36 | SemiBold |
+| `Heading/H3` | 24 / 32 | SemiBold |
+| `Heading/H4` | 20 / 28 | SemiBold |
+| `Body/Large` | 18 / 28 | Regular |
+| `Body/Base` | 16 / 24 | Regular |
+| `Body/Base Medium` | 16 / 24 | Medium |
+| `Body/Small` | 14 / 20 | Regular |
+| `Body/Small Medium` | 14 / 20 | Medium |
+| `Label/Default` | 14 / 20 | Medium |
+| `Caption/Default` | 12 / 16 | Regular |
+| `Caption/Medium` | 12 / 16 | Medium |
 
 ## Phase 1 — Component Loop
 
