@@ -92,6 +92,20 @@
         throw new Error(`"${node.name}" (${label}) did not take text style "${style.name}".`);
       }
     }
+    // Figma has no single bindable "cornerRadius" field — only the four
+    // individual corners are bindable. setBoundVariable("cornerRadius", ...)
+    // doesn't throw, it just silently does nothing, which is exactly what
+    // broke the previous run.
+    function bindCornerRadius(node, variable) {
+      const fields = ["topLeftRadius", "topRightRadius", "bottomLeftRadius", "bottomRightRadius"];
+      for (const field of fields) {
+        node.setBoundVariable(field, variable);
+        const bound = node.boundVariables && node.boundVariables[field];
+        if (!bound || bound.id !== variable.id) {
+          throw new Error(`"${field}" on "${node.name}" did not bind to "${variable.name}".`);
+        }
+      }
+    }
 
     const NAME = "Alert";
     const existing = figma.currentPage.findOne(
@@ -151,7 +165,7 @@
       bindScalar(root, "paddingTop", need(prim, "spacing/3"));
       bindScalar(root, "paddingBottom", need(prim, "spacing/3"));
       root.cornerRadius = 10;
-      bindScalar(root, "cornerRadius", need(prim, "radius/lg"));
+      bindCornerRadius(root, need(prim, "radius/lg"));
       root.strokeWeight = 1;
       bindScalar(root, "strokeWeight", need(prim, "border-width/1"));
       bindStroke(root, need(sem, "border/default"));
