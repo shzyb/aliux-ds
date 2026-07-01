@@ -10,9 +10,9 @@
 // Heights aren't hardcoded — each size is built from real padding tokens
 // around Body/Small Medium (14px/20px line-height) text, which reproduces
 // shadcn's documented h-9/h-8/h-10 (default/sm/lg) exactly:
-//   default: px-4 py-2  -> 16 + 20 + 16 = 36px (h-9)
-//   sm:      px-3 py-1.5 -> 12 + 20 + 12 = wait, uses spacing/1-5 (6px) -> 32px (h-8)
-//   lg:      px-6 py-2.5 (spacing/2-5, 10px) -> 40px (h-10)
+//   default: px-4 py-2   -> 16 + 20 + 16 = 36px (h-9)
+//   sm:      px-3 py-1.5 -> spacing/1-5 (6px) each side -> 32px (h-8)
+//   lg:      px-6 py-2.5 -> spacing/2-5 (10px) each side -> 40px (h-10)
 //   icon:    fixed 36x36 square, icon only
 //
 // Flag: some third-party sources mention additional icon-xs/icon-sm/
@@ -22,11 +22,26 @@
 // confirmed default/sm/lg/icon sizes. Ask if you want the extra icon sizes
 // added once confirmed.
 //
+// State is modeled as a real Variant (not a boolean) so it matches
+// shadcn's actual hover/focus-visible/disabled CSS and so Figma's
+// prototyping "while hovering" interaction can target a real variant:
+//   Hover:    bg-colored styles get 90% paint opacity (shadcn's
+//             hover:bg-*/90); bg-less styles (Ghost/Outline) pick up
+//             bg/muted (shadcn's hover:bg-accent); Link gets underline
+//             (shadcn's hover:underline is Link's *only* hover change —
+//             Link is NOT underlined by default, only on hover).
+//   Focused:  adds/replaces the border with a 2px border/focus ring
+//             (shadcn's focus-visible:ring).
+//   Disabled: root.opacity = 0.5 on the whole frame, matching shadcn's
+//             literal disabled:opacity-50 — real state, not a boolean
+//             scrim hack.
+//
 // Variant: Style = Default/Destructive/Outline/Secondary/Ghost/Link
 // Variant: Size = Default/Sm/Lg/Icon
+// Variant: State = Default/Hover/Focused/Disabled
 // Booleans: Has Icon (default false, not bound on Icon size — always
 // visible there since the icon is the entire content), Loading (default
-// false), Disabled (default false, visibility-bound scrim like Accordion)
+// false) — both independent of State.
 
 (async () => {
   try {
@@ -62,14 +77,10 @@
       return s;
     }
 
-    function bindFill(node, variable) {
-      node.fills = [
-        figma.variables.setBoundVariableForPaint(
-          { type: "SOLID", color: { r: 0.5, g: 0.5, b: 0.5 } },
-          "color",
-          variable
-        ),
-      ];
+    function bindFill(node, variable, opacity) {
+      const paint = { type: "SOLID", color: { r: 0.5, g: 0.5, b: 0.5 } };
+      if (typeof opacity === "number") paint.opacity = opacity;
+      node.fills = [figma.variables.setBoundVariableForPaint(paint, "color", variable)];
       const bound = node.fills[0] && node.fills[0].boundVariables && node.fills[0].boundVariables.color;
       if (!bound || bound.id !== variable.id) {
         throw new Error(`Fill on "${node.name}" did not bind to "${variable.name}".`);
@@ -129,7 +140,7 @@
       console.log(`[Button] Removed existing "${NAME}" component set — rebuilding fresh.`);
     }
     const orphans = figma.currentPage.findAll(
-      (n) => n.type === "COMPONENT" && /^Style=.*Size=/.test(n.name)
+      (n) => n.type === "COMPONENT" && /^Style=.*Size=.*State=/.test(n.name)
     );
     if (orphans.length) {
       for (const orphan of orphans) orphan.remove();
@@ -139,23 +150,57 @@
     await figma.loadFontAsync({ family: "Inter", style: "Medium" });
     const labelStyle = needStyle("Body/Small Medium");
 
-    // [styleName, bgVarName|null, textVarName, borderVarName|null, underline]
+    // [styleName, bgVarName|null, textVarName, borderVarName|null, hoverMode]
+    // hoverMode: "fade" = 90% paint opacity on the existing bg (shadcn's
+    // hover:bg-*/90); "tint" = swap to bg/muted (shadcn's hover:bg-accent —
+    // used by styles whose base bg is transparent/page-colored, so fading
+    // it would show nothing); "underline" = Link's hover:underline only
+    // (Link is NOT underlined by default, only on hover).
     const STYLES = [
-      ["Default", "interactive/default", "fg/on-brand", null, false],
-      ["Destructive", "bg/danger", "fg/on-brand", null, false],
-      ["Outline", "bg/default", "fg/default", "border/default", false],
-      ["Secondary", "bg/muted", "fg/default", null, false],
-      ["Ghost", null, "fg/default", null, false],
-      ["Link", null, "fg/default", null, true],
+      ["Default", "interactive/default", "fg/on-brand", null, "fade"],
+      ["Destructive", "bg/danger", "fg/on-brand", null, "fade"],
+      ["Outline", "bg/default", "fg/default", "border/default", "tint"],
+      ["Secondary", "bg/muted", "fg/default", null, "fade"],
+      ["Ghost", null, "fg/default", null, "tint"],
+      ["Link", null, "fg/default", null, "underline"],
     ];
 
-    // [sizeName, paddingXVarName, paddingYVarName, iconSize]
+    // [sizeName, paddingXVarName, paddingYVarName]
     const SIZES = [
-      ["Default", "spacing/4", "spacing/2", 16],
-      ["Sm", "spacing/3", "spacing/1-5", 16],
-      ["Lg", "spacing/6", "spacing/2-5", 16],
-      ["Icon", null, null, 16],
+      ["Default", "spacing/4", "spacing/2"],
+      ["Sm", "spacing/3", "spacing/1-5"],
+      ["Lg", "spacing/6", "spacing/2-5"],
+      ["Icon", null, null],
     ];
+
+    const STATES = ["Default", "Hover", "Focused", "Disabled"];
+
+    // Resolves the effective bg/border/paint-opacity/node-opacity/underline
+    // for a given style + state combination, per the rules in the file
+    // header above.
+    function resolveState(hoverMode, baseBg, baseBorder, stateName) {
+      let bg = baseBg;
+      let border = baseBorder;
+      let paintOpacity = 1;
+      let nodeOpacity = 1;
+      let underline = false;
+
+      if (stateName === "Hover") {
+        if (hoverMode === "underline") {
+          underline = true;
+        } else if (hoverMode === "fade") {
+          paintOpacity = 0.9;
+        } else if (hoverMode === "tint") {
+          bg = "bg/muted";
+        }
+      } else if (stateName === "Focused") {
+        border = "border/focus";
+      } else if (stateName === "Disabled") {
+        nodeOpacity = 0.5;
+      }
+
+      return { bg, border, paintOpacity, nodeOpacity, underline };
+    }
 
     function makeSpinner() {
       // Figma's vectorPaths only supports its own line/curve command syntax,
@@ -179,9 +224,16 @@
       return icon;
     }
 
-    async function buildVariant(styleName, bgVarName, textVarName, borderVarName, underline, sizeName, padXName, padYName, iconSize) {
+    async function buildVariant(styleName, baseBg, textVarName, baseBorder, hoverMode, sizeName, padXName, padYName, stateName) {
+      const { bg, border, paintOpacity, nodeOpacity, underline } = resolveState(
+        hoverMode,
+        baseBg,
+        baseBorder,
+        stateName
+      );
+
       const root = figma.createComponent();
-      root.name = `Style=${styleName}, Size=${sizeName}`;
+      root.name = `Style=${styleName}, Size=${sizeName}, State=${stateName}`;
       root.layoutMode = "HORIZONTAL";
       root.primaryAxisSizingMode = "AUTO";
       root.counterAxisSizingMode = "AUTO";
@@ -191,6 +243,7 @@
       bindScalar(root, "itemSpacing", need(prim, "spacing/2"));
       root.cornerRadius = 8;
       bindCornerRadius(root, need(prim, "radius/md"));
+      root.opacity = nodeOpacity;
 
       if (sizeName === "Icon") {
         root.resize(36, 36);
@@ -211,15 +264,15 @@
         bindScalar(root, "paddingBottom", need(prim, padYName));
       }
 
-      if (bgVarName) {
-        bindFill(root, need(sem, bgVarName));
+      if (bg) {
+        bindFill(root, need(sem, bg), paintOpacity);
       } else {
         root.fills = [];
       }
-      if (borderVarName) {
-        root.strokeWeight = 1;
-        bindStrokeWeight(root, need(prim, "border-width/1"));
-        bindStroke(root, need(sem, borderVarName));
+      if (border) {
+        root.strokeWeight = stateName === "Focused" ? 2 : 1;
+        bindStrokeWeight(root, need(prim, stateName === "Focused" ? "border-width/2" : "border-width/1"));
+        bindStroke(root, need(sem, border));
       } else {
         root.strokes = [];
       }
@@ -241,7 +294,7 @@
         label.characters = "Button";
         await applyTextStyle(label, labelStyle, "Label");
         bindFill(label, need(sem, textVarName));
-        if (underline) label.textDecoration = "UNDERLINE";
+        label.textDecoration = underline ? "UNDERLINE" : "NONE";
         root.appendChild(label);
       }
 
@@ -250,31 +303,17 @@
         throw new Error(`"${root.name}" should have ${expectedChildren} children but has ${root.children.length}.`);
       }
 
-      // Disabled scrim — visibility-bound overlay, same pattern as Accordion,
-      // since Figma booleans can't bind directly to a node's opacity.
-      const contentWidth = root.width;
-      const contentHeight = root.height;
-      const overlay = figma.createRectangle();
-      overlay.name = "Disabled Overlay";
-      overlay.resize(contentWidth, contentHeight);
-      bindFill(overlay, need(sem, "bg/default"));
-      overlay.opacity = 0.5;
-      overlay.visible = false;
-      root.appendChild(overlay);
-      overlay.layoutPositioning = "ABSOLUTE";
-      overlay.x = 0;
-      overlay.y = 0;
-      overlay.constraints = { horizontal: "STRETCH", vertical: "STRETCH" };
-
-      return { root, spinner, icon, label, overlay, isIconSize: sizeName === "Icon" };
+      return { root, spinner, icon, label };
     }
 
     const built = [];
-    for (const [styleName, bgVar, textVar, borderVar, underline] of STYLES) {
-      for (const [sizeName, padXName, padYName, iconSize] of SIZES) {
-        built.push(
-          await buildVariant(styleName, bgVar, textVar, borderVar, underline, sizeName, padXName, padYName, iconSize)
-        );
+    for (const [styleName, bgVar, textVar, borderVar, hoverMode] of STYLES) {
+      for (const [sizeName, padXName, padYName] of SIZES) {
+        for (const stateName of STATES) {
+          built.push(
+            await buildVariant(styleName, bgVar, textVar, borderVar, hoverMode, sizeName, padXName, padYName, stateName)
+          );
+        }
       }
     }
 
@@ -293,21 +332,17 @@
 
     const hasIconKey = componentSet.addComponentProperty("Has Icon", "BOOLEAN", false);
     const loadingKey = componentSet.addComponentProperty("Loading", "BOOLEAN", false);
-    const disabledKey = componentSet.addComponentProperty("Disabled", "BOOLEAN", false);
 
     for (const variant of componentSet.children) {
       const spinner = variant.findOne((n) => n.name === "Spinner");
       const icon = variant.findOne((n) => n.name === "Icon");
-      const overlay = variant.findOne((n) => n.name === "Disabled Overlay");
       if (!spinner) throw new Error(`"${variant.name}" is missing its "Spinner" node.`);
       if (!icon) throw new Error(`"${variant.name}" is missing its "Icon" node.`);
-      if (!overlay) throw new Error(`"${variant.name}" is missing its "Disabled Overlay" node.`);
 
       spinner.componentPropertyReferences = { visible: loadingKey };
-      overlay.componentPropertyReferences = { visible: disabledKey };
       // Icon size buttons keep their icon always visible — it's the whole
       // content, not an optional add-on — so "Has Icon" isn't bound there.
-      const isIconSize = /Size=Icon$/.test(variant.name);
+      const isIconSize = /Size=Icon,/.test(variant.name);
       if (!isIconSize) {
         icon.componentPropertyReferences = { visible: hasIconKey };
       }
@@ -315,17 +350,18 @@
 
     console.log(
       "[Button] Verification report (sample):",
-      componentSet.children.slice(0, 3).map((variant) => {
+      componentSet.children.slice(0, 4).map((variant) => {
         const label = variant.findOne((n) => n.name === "Label");
         return {
           variant: variant.name,
+          opacity: variant.opacity,
           childCount: variant.children.length,
           labelFillBound: !!(label && label.fills[0] && label.fills[0].boundVariables && label.fills[0].boundVariables.color),
         };
       })
     );
 
-    const summary = `"${NAME}" created — ${built.length} variants (Style x Size: 6x4), 3 boolean props (Has Icon, Loading, Disabled). All bindings verified.`;
+    const summary = `"${NAME}" created — ${built.length} variants (Style x Size x State: 6x4x4), 2 boolean props (Has Icon, Loading). All bindings verified.`;
     console.log(summary);
     figma.notify(summary, { timeout: 6000 });
   } catch (err) {
