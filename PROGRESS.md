@@ -108,7 +108,7 @@ primitives; font weight is expressed via Inter's named styles.
 
 ## Phase 1 — Component Loop
 
-Completed: **14 / 61** (+ 9 pending, skipped: Bubble, Calendar, Card, Carousel, Chart, Collapsible, Combobox, Command, Context Menu — see below)
+Completed: **16 / 61** (+ 9 pending, skipped: Bubble, Calendar, Card, Carousel, Chart, Collapsible, Combobox, Command, Context Menu — see below)
 
 **Bugs found and fixed while building Alert (2026-07-01), in order surfaced:** the original
 script left an incomplete build — only `Style=Default` existed as a loose component (never
@@ -156,12 +156,14 @@ every future component. The Button loading spinner is the one exception, kept as
 | 12 | Data Table | [`figma-scripts/12-data-table.js`](figma-scripts/12-data-table.js) | shadcn's "Data Table" isn't actually a standalone styled component — it's a *recipe* combining the plain `Table` (not yet built) with TanStack Table logic, plus Button/Input/Checkbox. Built as a single Component showing the canonical anatomy: toolbar (filter input + column-visibility button placeholders) → table (header + 3 rows, each with a row-selection placeholder chip) → footer (selection count + Previous/Next pager placeholders). Boolean: `Show Toolbar`. Originally used a real Checkbox component instance for row selection; switched to a placeholder chip per your call so this script doesn't depend on `11-checkbox.js` having run first — swap in your own Checkbox reference. |
 | 13 | Date Picker | [`figma-scripts/13-date-picker.js`](figma-scripts/13-date-picker.js) | Scoped to the trigger only — shadcn's Date Picker is literally Popover(Calendar) wrapped by a Button trigger, and the actual calendar grid is Calendar's job (currently skipped), so building one here would just duplicate that future component. Outline-Button-styled trigger with icon placeholder + label. Boolean: `Has Value` (toggles a "Pick a date" placeholder vs an example selected-date label, same always-present-base-layer pattern as Avatar's Image/Fallback). |
 | 14 | Dialog | [`figma-scripts/14-dialog.js`](figma-scripts/14-dialog.js) | Same Header/Footer card anatomy as Alert Dialog, plus the close "X" button AlertDialog doesn't have (Dialog can be freely dismissed; AlertDialog forces an explicit choice). No documented variant axis. Booleans: `Show Close Button` (matches shadcn's actual documented `showCloseButton` prop), `Has Description`, `Has Footer`. Same `Heading/H4` text-style flag as Alert Dialog. |
+| 15 | Direction | [`figma-scripts/15-direction.js`](figma-scripts/15-direction.js) | Genuine edge case: shadcn's Direction is `DirectionProvider`/`useDirection` — a React Context Provider with zero visual output, no anatomy, no variant, nothing to bind a token to. Built as a documentation-note card (Title + Description explaining what it is and that it has no UI) rather than faking a visual spec that doesn't exist. No variants, no booleans. |
+| 16 | Drawer | [`figma-scripts/16-drawer.js`](figma-scripts/16-drawer.js) | Same Header/Footer card content as Dialog, anchored to a screen edge per the real documented `direction` prop. Variant `Direction`: Bottom/Top/Left/Right — only the edge the panel *isn't* anchored to gets rounded corners (e.g. Bottom is flush with the screen's bottom edge, so only its top corners round), and a drag handle bar appears on Top/Bottom only (on whichever side is farthest from the anchor), matching real vaul/shadcn behavior — Left/Right don't get one. Booleans: `Has Description`, `Has Footer`. |
 
 No new semantic tokens were needed for any of these — all bind exclusively to existing
 `fg/*`, `bg/*`, `border/*`, `interactive/*`, `surface/*` and `spacing/*`, `radius/*`, `border-width/*` primitives.
 
-Remaining (45, + 9 pending — Bubble, Calendar, Card, Carousel, Chart, Collapsible, Combobox, Command, Context Menu):
-Direction, Drawer, Dropdown Menu, Empty, Field, Hover Card, Input,
+Remaining (43, + 9 pending — Bubble, Calendar, Card, Carousel, Chart, Collapsible, Combobox, Command, Context Menu):
+Dropdown Menu, Empty, Field, Hover Card, Input,
 Input Group, Input OTP, Item, Kbd, Label, Marker, Menubar, Message,
 Message Scroller, Native Select, Navigation Menu, Pagination, Popover, Progress,
 Radio Group, Resizable, Scroll Area, Select, Separator, Sheet, Sidebar,
