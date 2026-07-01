@@ -108,31 +108,38 @@ primitives; font weight is expressed via Inter's named styles.
 
 ## Phase 1 — Component Loop
 
-Completed: **2 / 61** (Alert re-verified as of the fix below; please re-run and confirm)
+Completed: **4 / 61**
 
-**2026-07-01 fix:** the original Alert script left an incomplete build in the file — only
-`Style=Default` existed as a loose component (never wrapped into a "Alert" component set),
-its title used the wrong text style, and its fill wasn't bound to a semantic variable. Root
-cause: the script had no verification, so it likely threw partway through the first variant
-(after the title, before the description) and nothing downstream ever ran or surfaced clearly.
-Both `01-accordion.js` and `02-alert.js` were rewritten to:
-- Read back every fill/stroke/scalar/text-style binding immediately after setting it and throw
-  a precise, named error the instant one doesn't take, instead of continuing silently.
-- Delete-and-rebuild instead of skip on re-run, and also sweep up orphaned loose components
-  (`Style=...`/`State=...`) left behind by a prior partial failure, so re-running always starts
-  from a clean slate.
-- Print a verification report to console on success (variant count, style IDs, bound-variable
-  booleans) so the end state is provable, not assumed.
+**Bugs found and fixed while building Alert (2026-07-01), in order surfaced:** the original
+script left an incomplete build — only `Style=Default` existed as a loose component (never
+wrapped into a set), its title used the wrong text style, and colors weren't bound. Root cause:
+no verification, so it threw partway through the first variant and nothing downstream ran.
+Fixed by rewriting the binding helpers to read back every fill/stroke/scalar/text-style bind and
+throw immediately if it didn't take. That surfaced three real, per-node-type Figma API gaps,
+fixed one at a time as each was hit:
+1. `cornerRadius` isn't bindable as a single field on frame-like nodes — only the four
+   `topLeftRadius`/`topRightRadius`/`bottomLeftRadius`/`bottomRightRadius` fields are.
+2. Same gap for `strokeWeight` → `strokeTopWeight`/`strokeRightWeight`/`strokeBottomWeight`/`strokeLeftWeight`.
+3. `textStyleId =` (sync setter) is blocked entirely on dynamic-page documents (the current
+   default for Figma files) — must use `await node.setTextStyleIdAsync(id)`.
+
+All scripts from Alert onward use `bindCornerRadius()`, `bindStrokeWeight()`, and async
+`applyTextStyle()` from the start. `01-accordion.js` has the corner-radius/stroke-weight fix
+applied but *not yet* the dynamic-page `textStyleId` fix, per your request to leave it alone —
+it will hit the same `setTextStyleIdAsync` error the first time it's run in a dynamic-page file.
 
 | # | Component | Script | Anatomy / variants / booleans |
 |---|---|---|---|
-| 1 | Accordion | [`figma-scripts/01-accordion.js`](figma-scripts/01-accordion.js) | Built as reusable "Accordion Item" (trigger + collapsible content + bottom border) since shadcn's `<Accordion>` wrapper has no unique styling of its own. Variant `State`: Closed/Open (drives chevron rotation + content visibility). Booleans: `Show Border`, `Disabled` (visibility-bound scrim, since Figma booleans can't bind to opacity directly). Chevron is a hand-drawn vector, not an imported icon. |
-| 2 | Alert | [`figma-scripts/02-alert.js`](figma-scripts/02-alert.js) | Icon + Title/Description text column, bordered card. Variant `Style`: Default/Destructive (only text/icon color changes — border & background stay the same, matching shadcn's actual CVA classes). Booleans: `Has Icon`, `Has Description`. Icon is a generic stroked circle placeholder, not a specific Lucide icon (varies per real usage — info/error/check — so left generic per the "nice-to-have, not strict requirement" guidance on icon slots). |
+| 1 | Accordion | [`figma-scripts/01-accordion.js`](figma-scripts/01-accordion.js) | Built as reusable "Accordion Item" (trigger + collapsible content + bottom border) since shadcn's `<Accordion>` wrapper has no unique styling of its own. Variant `State`: Closed/Open (drives chevron rotation + content visibility). Booleans: `Show Border`, `Disabled` (visibility-bound scrim, since Figma booleans can't bind to opacity directly). Chevron is a hand-drawn vector, not an imported icon. **Not yet re-run since the `textStyleId` fix — expect one more error until it is.** |
+| 2 | Alert | [`figma-scripts/02-alert.js`](figma-scripts/02-alert.js) | Icon + Title/Description text column, bordered card. Variant `Style`: Default/Destructive (only text/icon color changes — border & background stay the same, matching shadcn's actual CVA classes). Booleans: `Has Icon`, `Has Description`. Icon is a generic stroked circle placeholder, not a specific Lucide icon. |
+| 3 | Alert Dialog | [`figma-scripts/03-alert-dialog.js`](figma-scripts/03-alert-dialog.js) | Header (Title+Description) + Footer (Cancel/Action) card. No variant axis — shadcn's AlertDialog has no documented `variant` prop, so this is a single Component rather than a ComponentSet. Boolean: `Has Description`. Cancel/Action are plain styled placeholders (not Button instances — Button hasn't been built yet in the loop). Flagged: Title uses `Heading/H4` (20px/Semibold) as the nearest existing text style to shadcn's actual 18px/Semibold — Phase 0b has no 18px+Semibold combination. |
+| 4 | Aspect Ratio | [`figma-scripts/04-aspect-ratio.js`](figma-scripts/04-aspect-ratio.js) | Single placeholder rectangle constrained to a ratio. Variant `Ratio`: 1:1/4:3/16:9/21:9 — shadcn's actual `ratio` prop takes an arbitrary number, modeled here as the common documented ratios since Figma variants need concrete dimensions. No booleans. |
 
-No new semantic tokens were needed for either — both bind exclusively to existing `fg/*`, `border/*`, `bg/default`, `surface/raised` and `spacing/*`, `radius/lg`, `border-width/*` primitives.
+No new semantic tokens were needed for any of the four — all bind exclusively to existing
+`fg/*`, `bg/*`, `border/*`, `interactive/*` and `spacing/*`, `radius/*`, `border-width/*` primitives.
 
-Remaining (59):
-Alert Dialog, Aspect Ratio, Attachment, Avatar, Badge,
+Remaining (57):
+Attachment, Avatar, Badge,
 Breadcrumb, Bubble, Button, Button Group, Calendar, Card, Carousel, Chart,
 Checkbox, Collapsible, Combobox, Command, Context Menu, Data Table, Date Picker,
 Dialog, Direction, Drawer, Dropdown Menu, Empty, Field, Hover Card, Input,
