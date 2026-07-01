@@ -108,7 +108,7 @@ primitives; font weight is expressed via Inter's named styles.
 
 ## Phase 1 — Component Loop
 
-Completed: **6 / 61**
+Completed: **8 / 61**
 
 **Bugs found and fixed while building Alert (2026-07-01), in order surfaced:** the original
 script left an incomplete build — only `Style=Default` existed as a loose component (never
@@ -136,13 +136,14 @@ it will hit the same `setTextStyleIdAsync` error the first time it's run in a dy
 | 4 | Aspect Ratio | [`figma-scripts/04-aspect-ratio.js`](figma-scripts/04-aspect-ratio.js) | Single placeholder rectangle constrained to a ratio. Variant `Ratio`: 1:1/4:3/16:9/21:9 — shadcn's actual `ratio` prop takes an arbitrary number, modeled here as the common documented ratios since Figma variants need concrete dimensions. No booleans. |
 | 5 | Attachment | [`figma-scripts/05-attachment.js`](figma-scripts/05-attachment.js) | Media thumbnail + Title/Description + Actions card. Deliberately scoped down: shadcn's real Attachment crosses 5 states x 3 sizes x 2 orientations (30 combos) — only `State` (Idle/Uploading/Processing/Error/Done) is modeled as a Variant axis; size and orientation are **not modeled**, flagged in the file header rather than half-building either. Boolean: `Has Actions`. Shimmer/progress animation has no static Figma equivalent, so Uploading/Processing are differentiated by description text/color only. |
 | 6 | Avatar | [`figma-scripts/06-avatar.js`](figma-scripts/06-avatar.js) | Circular Image placeholder layered over an always-present Fallback (initials) — toggling `Has Image` off reveals the fallback, avoiding the need for an inverse boolean. Variant `Size`: Sm(24)/Default(32)/Lg(40), matching shadcn's documented `size-6`/`size-8`/`size-10` scale. Boolean: `Has Image`. Flagged: fallback initials use one fixed text style at every size rather than scaling with avatar size. |
+| 7 | Badge | [`figma-scripts/07-badge.js`](figma-scripts/07-badge.js) | Single inline pill, no sub-parts. Variant `Style`: Default/Secondary/Destructive/Outline. Boolean: `Has Icon` (leading icon slot). Flagged: shadcn's badge text is 12px/Semibold; Phase 0b has no Semibold at 12px, so `Caption/Medium` (12px/Medium) is used as the nearest existing style. |
+| 8 | Breadcrumb | [`figma-scripts/08-breadcrumb.js`](figma-scripts/08-breadcrumb.js) | Built as reusable "Breadcrumb Item" (entry + trailing separator) since `<Breadcrumb>`/`<BreadcrumbList>` are unstyled wrappers, same reasoning as Accordion. Variant `Type`: Link/Page/Ellipsis. Boolean: `Show Separator` (turn off on the last item in an assembled trail). |
 
-No new semantic tokens were needed for any of the six — all bind exclusively to existing
+No new semantic tokens were needed for any of the eight — all bind exclusively to existing
 `fg/*`, `bg/*`, `border/*`, `interactive/*`, `surface/*` and `spacing/*`, `radius/*`, `border-width/*` primitives.
 
-Remaining (55):
-Badge,
-Breadcrumb, Bubble, Button, Button Group, Calendar, Card, Carousel, Chart,
+Remaining (53):
+Bubble, Button, Button Group, Calendar, Card, Carousel, Chart,
 Checkbox, Collapsible, Combobox, Command, Context Menu, Data Table, Date Picker,
 Dialog, Direction, Drawer, Dropdown Menu, Empty, Field, Hover Card, Input,
 Input Group, Input OTP, Item, Kbd, Label, Marker, Menubar, Message,
