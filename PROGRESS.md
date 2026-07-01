@@ -108,7 +108,7 @@ primitives; font weight is expressed via Inter's named styles.
 
 ## Phase 1 — Component Loop
 
-Completed: **12 / 61** (+ 9 pending, skipped: Bubble, Calendar, Card, Carousel, Chart, Collapsible, Combobox, Command, Context Menu — see below)
+Completed: **14 / 61** (+ 9 pending, skipped: Bubble, Calendar, Card, Carousel, Chart, Collapsible, Combobox, Command, Context Menu — see below)
 
 **Bugs found and fixed while building Alert (2026-07-01), in order surfaced:** the original
 script left an incomplete build — only `Style=Default` existed as a loose component (never
@@ -154,13 +154,14 @@ every future component. The Button loading spinner is the one exception, kept as
 | — | ~~Calendar, Card, Carousel, Chart, Collapsible, Combobox, Command, Context Menu~~ | *(skipped)* | **Skipped per your request** to jump ahead to Checkbox and Data Table. Will circle back. |
 | 11 | Checkbox | [`figma-scripts/11-checkbox.js`](figma-scripts/11-checkbox.js) | Single 16x16 box. Variant `State`: Unchecked/Checked/Indeterminate (Checked and Indeterminate both fill with `interactive/default` per shadcn's real behavior — they're only visually distinguished by their placeholder chip, which you'll swap for a real check/minus icon). Boolean: `Disabled` (visibility-bound scrim). Flagged: shadcn's `rounded-[4px]` isn't one of Phase 0's radius stops — using `radius/sm` (6px) as nearest. |
 | 12 | Data Table | [`figma-scripts/12-data-table.js`](figma-scripts/12-data-table.js) | shadcn's "Data Table" isn't actually a standalone styled component — it's a *recipe* combining the plain `Table` (not yet built) with TanStack Table logic, plus Button/Input/Checkbox. Built as a single Component showing the canonical anatomy: toolbar (filter input + column-visibility button placeholders) → table (header + 3 rows, each with a row-selection placeholder chip) → footer (selection count + Previous/Next pager placeholders). Boolean: `Show Toolbar`. Originally used a real Checkbox component instance for row selection; switched to a placeholder chip per your call so this script doesn't depend on `11-checkbox.js` having run first — swap in your own Checkbox reference. |
+| 13 | Date Picker | [`figma-scripts/13-date-picker.js`](figma-scripts/13-date-picker.js) | Scoped to the trigger only — shadcn's Date Picker is literally Popover(Calendar) wrapped by a Button trigger, and the actual calendar grid is Calendar's job (currently skipped), so building one here would just duplicate that future component. Outline-Button-styled trigger with icon placeholder + label. Boolean: `Has Value` (toggles a "Pick a date" placeholder vs an example selected-date label, same always-present-base-layer pattern as Avatar's Image/Fallback). |
+| 14 | Dialog | [`figma-scripts/14-dialog.js`](figma-scripts/14-dialog.js) | Same Header/Footer card anatomy as Alert Dialog, plus the close "X" button AlertDialog doesn't have (Dialog can be freely dismissed; AlertDialog forces an explicit choice). No documented variant axis. Booleans: `Show Close Button` (matches shadcn's actual documented `showCloseButton` prop), `Has Description`, `Has Footer`. Same `Heading/H4` text-style flag as Alert Dialog. |
 
 No new semantic tokens were needed for any of these — all bind exclusively to existing
 `fg/*`, `bg/*`, `border/*`, `interactive/*`, `surface/*` and `spacing/*`, `radius/*`, `border-width/*` primitives.
 
-Remaining (47, + 9 pending — Bubble, Calendar, Card, Carousel, Chart, Collapsible, Combobox, Command, Context Menu):
-Date Picker,
-Dialog, Direction, Drawer, Dropdown Menu, Empty, Field, Hover Card, Input,
+Remaining (45, + 9 pending — Bubble, Calendar, Card, Carousel, Chart, Collapsible, Combobox, Command, Context Menu):
+Direction, Drawer, Dropdown Menu, Empty, Field, Hover Card, Input,
 Input Group, Input OTP, Item, Kbd, Label, Marker, Menubar, Message,
 Message Scroller, Native Select, Navigation Menu, Pagination, Popover, Progress,
 Radio Group, Resizable, Scroll Area, Select, Separator, Sheet, Sidebar,
