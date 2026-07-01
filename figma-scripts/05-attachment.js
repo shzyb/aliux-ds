@@ -1,4 +1,4 @@
-// Component 6/61 — Attachment
+// Component 5/61 — Attachment
 // Requires phase-0-variables.js and phase-0b-text-styles.js to have been run
 // first (reads the Semantics/Primitives collections and text styles).
 //
