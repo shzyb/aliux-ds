@@ -1,8 +1,6 @@
 // Component 12/61 — Data Table
-// Requires phase-0-variables.js, phase-0b-text-styles.js, AND
-// 11-checkbox.js to have been run first — this is the first script in the
-// library that reuses an already-built component (Checkbox) as real
-// instances rather than another placeholder.
+// Requires phase-0-variables.js and phase-0b-text-styles.js to have been
+// run first.
 //
 // Anatomy note: shadcn's "Data Table" isn't actually a standalone styled
 // component — the docs page is a *recipe* combining TanStack Table's
@@ -12,8 +10,12 @@
 // documented variant prop for "Data Table" itself, so this is built as a
 // single Component showing the canonical anatomy: toolbar (filter input +
 // column-visibility button placeholders) -> table (header row + 3 data
-// rows, each with a real Checkbox instance) -> footer (selection count +
+// rows, each with a row-selection placeholder) -> footer (selection count +
 // Previous/Next pager placeholders).
+//
+// Per your call, the row-selection cell is a plain placeholder chip rather
+// than a real Checkbox component instance — swap it for your own Checkbox
+// reference later.
 //
 // Boolean: Show Toolbar (default true)
 
@@ -51,14 +53,6 @@
       return s;
     }
 
-    const checkboxSet = figma.currentPage.findOne((n) => n.type === "COMPONENT_SET" && n.name === "Checkbox");
-    if (!checkboxSet) {
-      throw new Error('"Checkbox" component set not found — run 11-checkbox.js first.');
-    }
-    const uncheckedCheckbox = checkboxSet.children.find((c) => c.name === "State=Unchecked");
-    if (!uncheckedCheckbox) {
-      throw new Error('"Checkbox" is missing its "State=Unchecked" variant.');
-    }
 
     function bindFill(node, variable) {
       node.fills = [
@@ -255,11 +249,20 @@
         row.fills = [];
       }
 
-      const checkboxInstance = uncheckedCheckbox.createInstance();
-      checkboxInstance.name = "Checkbox";
-      row.appendChild(checkboxInstance);
-      checkboxInstance.layoutSizingHorizontal = "FIXED";
-      checkboxInstance.layoutSizingVertical = "FIXED";
+      // Placeholder chip standing in for a real Checkbox instance — swap
+      // this for your own Checkbox reference later.
+      const checkboxPlaceholder = figma.createRectangle();
+      checkboxPlaceholder.name = "Checkbox";
+      checkboxPlaceholder.resize(16, 16);
+      bindFill(checkboxPlaceholder, need(sem, "bg/default"));
+      checkboxPlaceholder.strokeWeight = 1;
+      bindStrokeWeight(checkboxPlaceholder, need(prim, "border-width/1"));
+      bindStroke(checkboxPlaceholder, need(sem, "border/default"));
+      checkboxPlaceholder.cornerRadius = 4;
+      bindCornerRadius(checkboxPlaceholder, need(prim, "radius/sm"));
+      row.appendChild(checkboxPlaceholder);
+      checkboxPlaceholder.layoutSizingHorizontal = "FIXED";
+      checkboxPlaceholder.layoutSizingVertical = "FIXED";
 
       for (let i = 0; i < COLUMNS.length; i++) {
         const col = COLUMNS[i];
@@ -415,11 +418,11 @@
     console.log("[Data Table] Verification report:", {
       childCount: root.children.length,
       tableChildCount: tableFrame.children.length,
-      checkboxInstancesCreated: ROWS.length + 1,
+      checkboxPlaceholdersCreated: ROWS.length + 1,
       headerFillBound: !!(headerRow.fills[0] && headerRow.fills[0].boundVariables && headerRow.fills[0].boundVariables.color),
     });
 
-    const summary = `"${NAME}" created — 1 component (no documented variant axis), 1 boolean prop (Show Toolbar), ${ROWS.length + 1} Checkbox instances. All bindings verified.`;
+    const summary = `"${NAME}" created — 1 component (no documented variant axis), 1 boolean prop (Show Toolbar), ${ROWS.length + 1} checkbox placeholder chips. All bindings verified.`;
     console.log(summary);
     figma.notify(summary, { timeout: 6000 });
   } catch (err) {
