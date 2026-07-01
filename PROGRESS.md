@@ -108,7 +108,7 @@ primitives; font weight is expressed via Inter's named styles.
 
 ## Phase 1 — Component Loop
 
-Completed: **8 / 61**
+Completed: **10 / 61** (+ 1 pending: Bubble, skipped per your call — see below)
 
 **Bugs found and fixed while building Alert (2026-07-01), in order surfaced:** the original
 script left an incomplete build — only `Style=Default` existed as a loose component (never
@@ -138,12 +138,15 @@ it will hit the same `setTextStyleIdAsync` error the first time it's run in a dy
 | 6 | Avatar | [`figma-scripts/06-avatar.js`](figma-scripts/06-avatar.js) | Circular Image placeholder layered over an always-present Fallback (initials) — toggling `Has Image` off reveals the fallback, avoiding the need for an inverse boolean. Variant `Size`: Sm(24)/Default(32)/Lg(40), matching shadcn's documented `size-6`/`size-8`/`size-10` scale. Boolean: `Has Image`. Flagged: fallback initials use one fixed text style at every size rather than scaling with avatar size. |
 | 7 | Badge | [`figma-scripts/07-badge.js`](figma-scripts/07-badge.js) | Single inline pill, no sub-parts. Variant `Style`: Default/Secondary/Destructive/Outline. Boolean: `Has Icon` (leading icon slot). Flagged: shadcn's badge text is 12px/Semibold; Phase 0b has no Semibold at 12px, so `Caption/Medium` (12px/Medium) is used as the nearest existing style. |
 | 8 | Breadcrumb | [`figma-scripts/08-breadcrumb.js`](figma-scripts/08-breadcrumb.js) | Built as reusable "Breadcrumb Item" (entry + trailing separator) since `<Breadcrumb>`/`<BreadcrumbList>` are unstyled wrappers, same reasoning as Accordion. Variant `Type`: Link/Page/Ellipsis. Boolean: `Show Separator` (turn off on the last item in an assembled trail). |
+| — | ~~Bubble~~ | *(skipped)* | **Skipped per your call.** Couldn't verify its variant list against the live docs (search summaries suggested 7 variants — Primary/Secondary/Muted/Tinted/Outlined/Destructive/Ghost — but this wasn't a confirmed quote from the source). Circle back when you can paste the doc content, or when live fetching is available. |
+| 9 | Button | [`figma-scripts/09-button.js`](figma-scripts/09-button.js) | Icon/Spinner/Label, sizes built from real padding tokens rather than hardcoded heights (reproduces shadcn's documented h-9/h-8/h-10 exactly). Variant `Style`: Default/Destructive/Outline/Secondary/Ghost/Link. Variant `Size`: Default/Sm/Lg/Icon (24 variants total). Booleans: `Has Icon` (not bound on Icon size — always visible there), `Loading`, `Disabled` (visibility-bound scrim). Flagged: some sources mention additional icon-xs/icon-sm/icon-lg sizes that couldn't be confirmed against live docs — not built; ask if you want them added. |
+| 10 | Button Group | [`figma-scripts/10-button-group.js`](figma-scripts/10-button-group.js) | One outer bordered/rounded frame (clipped) containing 3 generic ghost-style segments divided by thin separator lines — follows shadcn's own `ButtonGroupSeparator` pattern rather than trying to collapse individual button borders. Variant `Orientation`: Horizontal/Vertical. No booleans (structural anatomy piece; mixing in real Button/Input instances is left to actual usage). |
 
-No new semantic tokens were needed for any of the eight — all bind exclusively to existing
+No new semantic tokens were needed for any of these — all bind exclusively to existing
 `fg/*`, `bg/*`, `border/*`, `interactive/*`, `surface/*` and `spacing/*`, `radius/*`, `border-width/*` primitives.
 
-Remaining (53):
-Bubble, Button, Button Group, Calendar, Card, Carousel, Chart,
+Remaining (51, + Bubble pending):
+Calendar, Card, Carousel, Chart,
 Checkbox, Collapsible, Combobox, Command, Context Menu, Data Table, Date Picker,
 Dialog, Direction, Drawer, Dropdown Menu, Empty, Field, Hover Card, Input,
 Input Group, Input OTP, Item, Kbd, Label, Marker, Menubar, Message,
