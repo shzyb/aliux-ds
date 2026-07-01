@@ -89,6 +89,16 @@
         }
       }
     }
+    function bindCornerRadius(node, variable) {
+      const fields = ["topLeftRadius", "topRightRadius", "bottomLeftRadius", "bottomRightRadius"];
+      for (const field of fields) {
+        node.setBoundVariable(field, variable);
+        const bound = node.boundVariables && node.boundVariables[field];
+        if (!bound || bound.id !== variable.id) {
+          throw new Error(`"${field}" on "${node.name}" did not bind to "${variable.name}".`);
+        }
+      }
+    }
     async function applyTextStyle(node, style, label) {
       await node.setTextStyleIdAsync(style.id);
       if (node.textStyleId !== style.id) {
@@ -113,17 +123,15 @@
     await figma.loadFontAsync({ family: "Inter", style: "Regular" });
     const entryStyle = needStyle("Body/Small");
 
+    // Placeholder chip standing in for the real chevron-right separator
+    // icon — swap this for an actual icon later.
     function makeSeparator() {
-      const sep = figma.createVector();
+      const sep = figma.createRectangle();
       sep.name = "Separator";
       sep.resize(14, 14);
-      sep.vectorPaths = [{ windingRule: "NONZERO", data: "M 5 3 L 9 7 L 5 11" }]; // chevron-right
-      sep.fills = [];
-      bindStroke(sep, need(sem, "fg/muted"));
-      sep.strokeWeight = 1;
-      bindStrokeWeight(sep, need(prim, "border-width/1"));
-      sep.strokeCap = "ROUND";
-      sep.strokeJoin = "ROUND";
+      bindFill(sep, need(sem, "fg/muted"));
+      sep.cornerRadius = 3;
+      bindCornerRadius(sep, need(prim, "radius/sm"));
       return sep;
     }
 
@@ -174,17 +182,14 @@
       root.paddingBottom = 0;
       root.fills = [];
 
-      const dots = figma.createVector();
+      // Placeholder chip standing in for the real ellipsis (horizontal
+      // dots) icon — swap this for an actual icon later.
+      const dots = figma.createRectangle();
       dots.name = "Dots";
       dots.resize(16, 16);
-      dots.vectorPaths = [
-        { windingRule: "NONZERO", data: "M 3 8 L 3.1 8 M 8 8 L 8.1 8 M 13 8 L 13.1 8" },
-      ];
-      dots.fills = [];
-      bindStroke(dots, need(sem, "fg/muted"));
-      dots.strokeWeight = 2;
-      bindStrokeWeight(dots, need(prim, "border-width/2"));
-      dots.strokeCap = "ROUND";
+      bindFill(dots, need(sem, "fg/muted"));
+      dots.cornerRadius = 3;
+      bindCornerRadius(dots, need(prim, "radius/sm"));
       root.appendChild(dots);
 
       const separator = makeSeparator();

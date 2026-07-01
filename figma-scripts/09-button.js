@@ -158,22 +158,24 @@
     ];
 
     function makeSpinner() {
-      const spinner = figma.createVector();
+      // Figma's vectorPaths only supports its own line/curve command syntax,
+      // not SVG arc ("A") commands — an EllipseNode with arcData is the
+      // correct way to draw a partial ring here.
+      const spinner = figma.createEllipse();
       spinner.name = "Spinner";
       spinner.resize(16, 16);
-      spinner.vectorPaths = [{ windingRule: "NONZERO", data: "M 8 2 A 6 6 0 0 1 14 8" }];
-      spinner.fills = [];
-      spinner.strokeCap = "ROUND";
+      spinner.arcData = { startingAngle: 0, endingAngle: Math.PI * 1.5, innerRadius: 0.75 };
+      spinner.strokes = [];
       spinner.visible = false;
       return spinner;
     }
+    // Placeholder chip standing in for a real leading icon — swap this
+    // for an actual icon later.
     function makeIcon() {
-      const icon = figma.createVector();
+      const icon = figma.createRectangle();
       icon.name = "Icon";
       icon.resize(16, 16);
-      icon.vectorPaths = [{ windingRule: "NONZERO", data: "M 8 2 L 8 14 M 2 8 L 14 8" }]; // generic plus glyph
-      icon.fills = [];
-      icon.strokeCap = "ROUND";
+      icon.cornerRadius = 3;
       return icon;
     }
 
@@ -223,15 +225,12 @@
       }
 
       const spinner = makeSpinner();
-      bindStroke(spinner, need(sem, textVarName));
-      spinner.strokeWeight = 2;
-      bindStrokeWeight(spinner, need(prim, "border-width/2"));
+      bindFill(spinner, need(sem, textVarName));
       root.appendChild(spinner);
 
       const icon = makeIcon();
-      bindStroke(icon, need(sem, textVarName));
-      icon.strokeWeight = 2;
-      bindStrokeWeight(icon, need(prim, "border-width/2"));
+      bindFill(icon, need(sem, textVarName));
+      bindCornerRadius(icon, need(prim, "radius/sm"));
       root.appendChild(icon);
 
       let label = null;

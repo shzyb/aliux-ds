@@ -240,15 +240,14 @@
       actions.layoutSizingHorizontal = "FIXED";
       actions.layoutSizingVertical = "FIXED";
 
-      const action = figma.createVector();
+      // Placeholder chip standing in for the real action icon (e.g. a
+      // remove/download glyph) — swap this for an actual icon later.
+      const action = figma.createRectangle();
       action.name = "Action";
       action.resize(16, 16);
-      action.vectorPaths = [{ windingRule: "NONZERO", data: "M 4 4 L 12 12 M 12 4 L 4 12" }]; // simple "x" glyph
-      action.fills = [];
-      bindStroke(action, need(sem, "fg/muted"));
-      action.strokeWeight = 1;
-      bindStrokeWeight(action, need(prim, "border-width/1"));
-      action.strokeCap = "ROUND";
+      bindFill(action, need(sem, "fg/muted"));
+      action.cornerRadius = 3;
+      bindCornerRadius(action, need(prim, "radius/sm"));
       actions.appendChild(action);
 
       if (root.children.length !== 3) {

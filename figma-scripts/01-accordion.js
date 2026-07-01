@@ -135,17 +135,17 @@
 
     const ITEM_WIDTH = 400;
 
+    // Placeholder chip standing in for the real chevron-down icon — swap
+    // this for an actual icon component/instance later. Rotation is still
+    // set per variant so it carries over once a real directional icon
+    // replaces this (a square itself shows no visible rotation).
     function makeChevron(open) {
-      const chevron = figma.createVector();
+      const chevron = figma.createRectangle();
       chevron.name = "Chevron";
       chevron.resize(16, 16);
-      chevron.vectorPaths = [{ windingRule: "NONZERO", data: "M 4 6 L 8 10 L 12 6" }];
-      chevron.fills = [];
-      bindStroke(chevron, need(sem, "fg/muted"));
-      chevron.strokeWeight = 2;
-      bindStrokeWeight(chevron, need(prim, "border-width/2"));
-      chevron.strokeCap = "ROUND";
-      chevron.strokeJoin = "ROUND";
+      bindFill(chevron, need(sem, "fg/muted"));
+      chevron.cornerRadius = 3;
+      bindCornerRadius(chevron, need(prim, "radius/sm"));
       chevron.rotation = open ? 180 : 0;
       return chevron;
     }

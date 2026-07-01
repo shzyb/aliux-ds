@@ -164,16 +164,14 @@
         root.strokes = [];
       }
 
-      const icon = figma.createVector();
+      // Placeholder chip standing in for a real leading icon — swap this
+      // for an actual icon later.
+      const icon = figma.createRectangle();
       icon.name = "Icon";
       icon.resize(12, 12);
-      icon.vectorPaths = [{ windingRule: "NONZERO", data: "M 2 6 L 5 9 L 10 3" }]; // simple check glyph
-      icon.fills = [];
-      bindStroke(icon, need(sem, textVarName));
-      icon.strokeWeight = 1;
-      bindStrokeWeight(icon, need(prim, "border-width/1"));
-      icon.strokeCap = "ROUND";
-      icon.strokeJoin = "ROUND";
+      bindFill(icon, need(sem, textVarName));
+      icon.cornerRadius = 2;
+      bindCornerRadius(icon, need(prim, "radius/sm"));
       icon.visible = false;
       root.appendChild(icon);
 
