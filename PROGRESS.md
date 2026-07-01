@@ -94,9 +94,9 @@ primitives; font weight is expressed via Inter's named styles.
 |---|---|---|
 | `Display` | 48 / 48 | Bold |
 | `Heading/H1` | 36 / 40 | Bold |
-| `Heading/H2` | 30 / 36 | SemiBold |
-| `Heading/H3` | 24 / 32 | SemiBold |
-| `Heading/H4` | 20 / 28 | SemiBold |
+| `Heading/H2` | 30 / 36 | Semi Bold |
+| `Heading/H3` | 24 / 32 | Semi Bold |
+| `Heading/H4` | 20 / 28 | Semi Bold |
 | `Body/Large` | 18 / 28 | Regular |
 | `Body/Base` | 16 / 24 | Regular |
 | `Body/Base Medium` | 16 / 24 | Medium |

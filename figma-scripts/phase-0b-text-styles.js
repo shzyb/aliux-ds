@@ -5,7 +5,7 @@
 // with fontSize and lineHeight bound to the Phase 0 font-size/* and
 // line-height/* primitive variables — no hardcoded numeric type values.
 //
-// Font weight (Regular/Medium/SemiBold/Bold) is expressed via Inter's
+// Font weight (Regular/Medium/Semi Bold/Bold) is expressed via Inter's
 // named font styles, not a bound variable: Figma's stable Plugin API does
 // not support binding TextStyle.fontName/font-style to a variable, only
 // fontSize / lineHeight / letterSpacing / paragraphSpacing / paragraphIndent.
@@ -18,6 +18,7 @@
 (async () => {
   const created = { styles: 0, reused: 0 };
   const missing = new Set();
+  const skippedFonts = new Set();
 
   try {
     // ---------------------------------------------------------------------
@@ -44,12 +45,21 @@
     }
 
     // ---------------------------------------------------------------------
-    // 2. Load every Inter weight we're about to use, before touching styles
+    // 2. Load every Inter weight we're about to use, before touching styles.
+    //    Figma's own Inter listing names the 600 weight "Semi Bold" (two
+    //    words) — not "SemiBold". Each weight is loaded independently so one
+    //    missing/renamed weight can't abort the whole script.
     // ---------------------------------------------------------------------
     const FONT_FAMILY = "Inter";
-    const WEIGHT_STYLES = ["Regular", "Medium", "SemiBold", "Bold"];
+    const WEIGHT_STYLES = ["Regular", "Medium", "Semi Bold", "Bold"];
+    const loadedWeights = new Set();
     for (const style of WEIGHT_STYLES) {
-      await figma.loadFontAsync({ family: FONT_FAMILY, style });
+      try {
+        await figma.loadFontAsync({ family: FONT_FAMILY, style });
+        loadedWeights.add(style);
+      } catch (err) {
+        console.error(`[Text Styles] Could not load font "${FONT_FAMILY} ${style}":`, err);
+      }
     }
 
     // Fallback concrete values (mirror the Phase 0 font-size/line-height
@@ -71,9 +81,9 @@
     const TEXT_STYLES = [
       ["Display", "5xl", "Bold"],
       ["Heading/H1", "4xl", "Bold"],
-      ["Heading/H2", "3xl", "SemiBold"],
-      ["Heading/H3", "2xl", "SemiBold"],
-      ["Heading/H4", "xl", "SemiBold"],
+      ["Heading/H2", "3xl", "Semi Bold"],
+      ["Heading/H3", "2xl", "Semi Bold"],
+      ["Heading/H4", "xl", "Semi Bold"],
       ["Body/Large", "lg", "Regular"],
       ["Body/Base", "base", "Regular"],
       ["Body/Base Medium", "base", "Medium"],
@@ -94,6 +104,11 @@
       const fontSizeVar = getPrimitive(`font-size/${sizeKey}`);
       const lineHeightVar = getPrimitive(`line-height/${sizeKey}`);
       if (!fontSizeVar || !lineHeightVar) continue; // reported via `missing` below
+
+      if (!loadedWeights.has(weightStyle)) {
+        skippedFonts.add(`${name} (${FONT_FAMILY} ${weightStyle})`);
+        continue;
+      }
 
       const [fontSizePx, lineHeightPx] = SIZE_VALUES[sizeKey];
 
@@ -117,10 +132,14 @@
     if (missing.size) {
       console.error("[Text Styles] Missing primitives — re-check phase-0-variables.js:", [...missing]);
     }
+    if (skippedFonts.size) {
+      console.error("[Text Styles] Skipped (font weight failed to load):", [...skippedFonts]);
+    }
 
     const summary =
       `Text styles done — ${created.styles} created / ${created.reused} reused (Inter).` +
-      (missing.size ? ` ${missing.size} missing primitive(s), see console.` : "");
+      (missing.size ? ` ${missing.size} missing primitive(s).` : "") +
+      (skippedFonts.size ? ` ${skippedFonts.size} style(s) skipped — see console.` : "");
     console.log(summary);
     figma.notify(summary, { timeout: 6000 });
   } catch (err) {
