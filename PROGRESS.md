@@ -108,10 +108,17 @@ primitives; font weight is expressed via Inter's named styles.
 
 ## Phase 1 — Component Loop
 
-Completed: **0 / 61**
+Completed: **2 / 61**
 
-Remaining (in doc order):
-Accordion, Alert, Alert Dialog, Aspect Ratio, Attachment, Avatar, Badge,
+| # | Component | Script | Anatomy / variants / booleans |
+|---|---|---|---|
+| 1 | Accordion | [`figma-scripts/01-accordion.js`](figma-scripts/01-accordion.js) | Built as reusable "Accordion Item" (trigger + collapsible content + bottom border) since shadcn's `<Accordion>` wrapper has no unique styling of its own. Variant `State`: Closed/Open (drives chevron rotation + content visibility). Booleans: `Show Border`, `Disabled` (visibility-bound scrim, since Figma booleans can't bind to opacity directly). Chevron is a hand-drawn vector, not an imported icon. |
+| 2 | Alert | [`figma-scripts/02-alert.js`](figma-scripts/02-alert.js) | Icon + Title/Description text column, bordered card. Variant `Style`: Default/Destructive (only text/icon color changes — border & background stay the same, matching shadcn's actual CVA classes). Booleans: `Has Icon`, `Has Description`. Icon is a generic stroked circle placeholder, not a specific Lucide icon (varies per real usage — info/error/check — so left generic per the "nice-to-have, not strict requirement" guidance on icon slots). |
+
+No new semantic tokens were needed for either — both bind exclusively to existing `fg/*`, `border/*`, `bg/default`, `surface/raised` and `spacing/*`, `radius/lg`, `border-width/*` primitives.
+
+Remaining (59):
+Alert Dialog, Aspect Ratio, Attachment, Avatar, Badge,
 Breadcrumb, Bubble, Button, Button Group, Calendar, Card, Carousel, Chart,
 Checkbox, Collapsible, Combobox, Command, Context Menu, Data Table, Date Picker,
 Dialog, Direction, Drawer, Dropdown Menu, Empty, Field, Hover Card, Input,

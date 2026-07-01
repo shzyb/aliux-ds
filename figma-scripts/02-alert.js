@@ -1,0 +1,199 @@
+// Component 2/61 — Alert
+// Requires phase-0-variables.js and phase-0b-text-styles.js to have been run
+// first (reads the Semantics/Primitives collections and the Body/Small(+Medium)
+// text styles they create).
+//
+// Anatomy: Alert root (bordered, rounded card) containing an optional leading
+// icon and a text column of AlertTitle + optional AlertDescription. shadcn's
+// border/background stay the same across variants; only the icon/title/
+// description text color changes for the destructive variant.
+//
+// Variants: Style = Default / Destructive
+// Booleans: Has Icon (default true), Has Description (default true)
+
+(async () => {
+  try {
+    const collections = await figma.variables.getLocalVariableCollectionsAsync();
+    const semantics = collections.find((c) => c.name === "Semantics");
+    const primitives = collections.find((c) => c.name === "Primitives");
+    if (!semantics || !primitives) {
+      throw new Error('Semantics/Primitives collection missing — run phase-0-variables.js first.');
+    }
+
+    async function collectionVarMap(collection) {
+      const map = new Map();
+      for (const id of collection.variableIds) {
+        const v = await figma.variables.getVariableByIdAsync(id);
+        if (v) map.set(v.name, v);
+      }
+      return map;
+    }
+    const sem = await collectionVarMap(semantics);
+    const prim = await collectionVarMap(primitives);
+
+    function need(map, name) {
+      const v = map.get(name);
+      if (!v) throw new Error(`Missing variable "${name}" — check Phase 0 setup.`);
+      return v;
+    }
+
+    const textStyles = await figma.getLocalTextStylesAsync();
+    const textStyleByName = new Map(textStyles.map((s) => [s.name, s]));
+    function needStyle(name) {
+      const s = textStyleByName.get(name);
+      if (!s) throw new Error(`Missing text style "${name}" — run phase-0b-text-styles.js first.`);
+      return s;
+    }
+
+    function bindFill(node, variable) {
+      node.fills = [
+        figma.variables.setBoundVariableForPaint(
+          { type: "SOLID", color: { r: 0.5, g: 0.5, b: 0.5 } },
+          "color",
+          variable
+        ),
+      ];
+    }
+    function bindStroke(node, variable) {
+      node.strokes = [
+        figma.variables.setBoundVariableForPaint(
+          { type: "SOLID", color: { r: 0.5, g: 0.5, b: 0.5 } },
+          "color",
+          variable
+        ),
+      ];
+    }
+    function bindScalar(node, field, variable) {
+      try {
+        node.setBoundVariable(field, variable);
+      } catch (err) {
+        console.error(`[Alert] Could not bind "${field}":`, err);
+      }
+    }
+
+    const NAME = "Alert";
+    const existing = figma.currentPage.findOne(
+      (n) => n.type === "COMPONENT_SET" && n.name === NAME
+    );
+    if (existing) {
+      console.log(`[Alert] Skipped — "${NAME}" already exists (id ${existing.id}).`);
+      figma.notify(`"${NAME}" already exists — skipping.`, { timeout: 4000 });
+      return;
+    }
+
+    await figma.loadFontAsync({ family: "Inter", style: "Regular" });
+    await figma.loadFontAsync({ family: "Inter", style: "Medium" });
+
+    const titleStyle = needStyle("Body/Small Medium");
+    const descriptionStyle = needStyle("Body/Small");
+
+    const ALERT_WIDTH = 400;
+
+    function makeIcon(colorVarName) {
+      const icon = figma.createEllipse();
+      icon.name = "Icon";
+      icon.resize(16, 16);
+      icon.fills = [];
+      bindStroke(icon, need(sem, colorVarName));
+      icon.strokeWeight = 2;
+      bindScalar(icon, "strokeWeight", need(prim, "border-width/2"));
+      return icon;
+    }
+
+    function buildVariant(styleName, titleColorName, descColorName) {
+      const root = figma.createComponent();
+      root.name = `Style=${styleName}`;
+      root.layoutMode = "HORIZONTAL";
+      root.primaryAxisSizingMode = "FIXED";
+      root.counterAxisSizingMode = "AUTO";
+      root.counterAxisAlignItems = "MIN";
+      root.resize(ALERT_WIDTH, root.height);
+      root.itemSpacing = 12;
+      bindScalar(root, "itemSpacing", need(prim, "spacing/3"));
+      root.paddingLeft = 16;
+      root.paddingRight = 16;
+      bindScalar(root, "paddingLeft", need(prim, "spacing/4"));
+      bindScalar(root, "paddingRight", need(prim, "spacing/4"));
+      root.paddingTop = 12;
+      root.paddingBottom = 12;
+      bindScalar(root, "paddingTop", need(prim, "spacing/3"));
+      bindScalar(root, "paddingBottom", need(prim, "spacing/3"));
+      root.cornerRadius = 10;
+      bindScalar(root, "cornerRadius", need(prim, "radius/lg"));
+      root.strokeWeight = 1;
+      bindScalar(root, "strokeWeight", need(prim, "border-width/1"));
+      bindStroke(root, need(sem, "border/default"));
+      bindFill(root, need(sem, "surface/raised"));
+
+      const icon = makeIcon(titleColorName);
+      root.appendChild(icon);
+      icon.layoutSizingHorizontal = "FIXED";
+      icon.layoutSizingVertical = "FIXED";
+
+      const textColumn = figma.createFrame();
+      textColumn.name = "Text";
+      textColumn.layoutMode = "VERTICAL";
+      textColumn.primaryAxisSizingMode = "AUTO";
+      textColumn.counterAxisSizingMode = "FIXED";
+      textColumn.itemSpacing = 2;
+      bindScalar(textColumn, "itemSpacing", need(prim, "spacing/0-5"));
+      textColumn.paddingLeft = 0;
+      textColumn.paddingRight = 0;
+      textColumn.paddingTop = 0;
+      textColumn.paddingBottom = 0;
+      textColumn.fills = [];
+      root.appendChild(textColumn);
+      textColumn.layoutSizingHorizontal = "FILL";
+
+      const title = figma.createText();
+      title.name = "Title";
+      title.characters = "Success! Your changes have been saved";
+      title.textStyleId = titleStyle.id;
+      bindFill(title, need(sem, titleColorName));
+      textColumn.appendChild(title);
+      title.layoutSizingHorizontal = "FILL";
+
+      const description = figma.createText();
+      description.name = "Description";
+      description.characters = "This is an alert description providing more context.";
+      description.textStyleId = descriptionStyle.id;
+      bindFill(description, need(sem, descColorName));
+      textColumn.appendChild(description);
+      description.layoutSizingHorizontal = "FILL";
+
+      return root;
+    }
+
+    const defaultVariant = buildVariant("Default", "fg/default", "fg/muted");
+    const destructiveVariant = buildVariant("Destructive", "fg/danger", "fg/danger");
+
+    const componentSet = figma.combineAsVariants(
+      [defaultVariant, destructiveVariant],
+      figma.currentPage
+    );
+    componentSet.name = NAME;
+
+    const existingSetCount = figma.currentPage.children.filter(
+      (n) => n.type === "COMPONENT_SET"
+    ).length;
+    componentSet.x = (existingSetCount - 1) * 600;
+    componentSet.y = 300;
+
+    const hasIconKey = componentSet.addComponentProperty("Has Icon", "BOOLEAN", true);
+    const hasDescriptionKey = componentSet.addComponentProperty("Has Description", "BOOLEAN", true);
+
+    for (const variant of componentSet.children) {
+      const icon = variant.findOne((n) => n.name === "Icon");
+      const description = variant.findOne((n) => n.name === "Description");
+      if (icon) icon.componentPropertyReferences = { visible: hasIconKey };
+      if (description) description.componentPropertyReferences = { visible: hasDescriptionKey };
+    }
+
+    const summary = `"${NAME}" created — 2 variants (Style: Default/Destructive), 2 boolean props (Has Icon, Has Description).`;
+    console.log(summary);
+    figma.notify(summary, { timeout: 6000 });
+  } catch (err) {
+    console.error("[Alert] Fatal error:", err);
+    figma.notify("Alert script failed — see console for details.", { error: true, timeout: 6000 });
+  }
+})();
