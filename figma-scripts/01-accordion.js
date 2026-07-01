@@ -92,6 +92,20 @@
         throw new Error(`"${node.name}" (${label}) did not take text style "${style.name}".`);
       }
     }
+    // Plain "strokeWeight" is documented as bindable, but on some node types
+    // setBoundVariable("strokeWeight", ...) silently no-ops — same gap as
+    // "cornerRadius". Bind all four per-side weight fields instead, which is
+    // documented to work across node types.
+    function bindStrokeWeight(node, variable) {
+      const fields = ["strokeTopWeight", "strokeRightWeight", "strokeBottomWeight", "strokeLeftWeight"];
+      for (const field of fields) {
+        node.setBoundVariable(field, variable);
+        const bound = node.boundVariables && node.boundVariables[field];
+        if (!bound || bound.id !== variable.id) {
+          throw new Error(`"${field}" on "${node.name}" did not bind to "${variable.name}".`);
+        }
+      }
+    }
 
     const NAME = "Accordion Item";
     const existing = figma.currentPage.findOne(
@@ -129,7 +143,7 @@
       chevron.fills = [];
       bindStroke(chevron, need(sem, "fg/muted"));
       chevron.strokeWeight = 2;
-      bindScalar(chevron, "strokeWeight", need(prim, "border-width/2"));
+      bindStrokeWeight(chevron, need(prim, "border-width/2"));
       chevron.strokeCap = "ROUND";
       chevron.strokeJoin = "ROUND";
       chevron.rotation = open ? 180 : 0;

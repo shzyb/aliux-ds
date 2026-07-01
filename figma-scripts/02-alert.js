@@ -106,6 +106,21 @@
         }
       }
     }
+    // Plain "strokeWeight" is a documented bindable field, but on frame-like
+    // nodes (frames/components/component sets) it silently no-ops the same
+    // way "cornerRadius" does — only the four per-side weight fields
+    // actually bind on those node types. Used everywhere for consistency,
+    // since it's documented to work on simple shapes too.
+    function bindStrokeWeight(node, variable) {
+      const fields = ["strokeTopWeight", "strokeRightWeight", "strokeBottomWeight", "strokeLeftWeight"];
+      for (const field of fields) {
+        node.setBoundVariable(field, variable);
+        const bound = node.boundVariables && node.boundVariables[field];
+        if (!bound || bound.id !== variable.id) {
+          throw new Error(`"${field}" on "${node.name}" did not bind to "${variable.name}".`);
+        }
+      }
+    }
 
     const NAME = "Alert";
     const existing = figma.currentPage.findOne(
@@ -142,7 +157,7 @@
       icon.fills = [];
       bindStroke(icon, need(sem, colorVarName));
       icon.strokeWeight = 2;
-      bindScalar(icon, "strokeWeight", need(prim, "border-width/2"));
+      bindStrokeWeight(icon, need(prim, "border-width/2"));
       return icon;
     }
 
@@ -167,7 +182,7 @@
       root.cornerRadius = 10;
       bindCornerRadius(root, need(prim, "radius/lg"));
       root.strokeWeight = 1;
-      bindScalar(root, "strokeWeight", need(prim, "border-width/1"));
+      bindStrokeWeight(root, need(prim, "border-width/1"));
       bindStroke(root, need(sem, "border/default"));
       bindFill(root, need(sem, "surface/raised"));
 
