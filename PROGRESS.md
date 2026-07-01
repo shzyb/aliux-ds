@@ -108,7 +108,7 @@ primitives; font weight is expressed via Inter's named styles.
 
 ## Phase 1 — Component Loop
 
-Completed: **16 / 61** (+ 9 pending, skipped: Bubble, Calendar, Card, Carousel, Chart, Collapsible, Combobox, Command, Context Menu — see below)
+Completed: **18 / 61** (+ 9 pending, skipped: Bubble, Calendar, Card, Carousel, Chart, Collapsible, Combobox, Command, Context Menu — see below)
 
 **Bugs found and fixed while building Alert (2026-07-01), in order surfaced:** the original
 script left an incomplete build — only `Style=Default` existed as a loose component (never
@@ -158,12 +158,14 @@ every future component. The Button loading spinner is the one exception, kept as
 | 14 | Dialog | [`figma-scripts/14-dialog.js`](figma-scripts/14-dialog.js) | Same Header/Footer card anatomy as Alert Dialog, plus the close "X" button AlertDialog doesn't have (Dialog can be freely dismissed; AlertDialog forces an explicit choice). No documented variant axis. Booleans: `Show Close Button` (matches shadcn's actual documented `showCloseButton` prop), `Has Description`, `Has Footer`. Same `Heading/H4` text-style flag as Alert Dialog. |
 | 15 | Direction | [`figma-scripts/15-direction.js`](figma-scripts/15-direction.js) | Genuine edge case: shadcn's Direction is `DirectionProvider`/`useDirection` — a React Context Provider with zero visual output, no anatomy, no variant, nothing to bind a token to. Built as a documentation-note card (Title + Description explaining what it is and that it has no UI) rather than faking a visual spec that doesn't exist. No variants, no booleans. |
 | 16 | Drawer | [`figma-scripts/16-drawer.js`](figma-scripts/16-drawer.js) | Same Header/Footer card content as Dialog, anchored to a screen edge per the real documented `direction` prop. Variant `Direction`: Bottom/Top/Left/Right — only the edge the panel *isn't* anchored to gets rounded corners (e.g. Bottom is flush with the screen's bottom edge, so only its top corners round), and a drag handle bar appears on Top/Bottom only (on whichever side is farthest from the anchor), matching real vaul/shadcn behavior — Left/Right don't get one. Booleans: `Has Description`, `Has Footer`. |
+| 17 | Dropdown Menu | [`figma-scripts/17-dropdown-menu.js`](figma-scripts/17-dropdown-menu.js) | Unlike Accordion/Breadcrumb, DropdownMenuContent (the floating panel) has real styling of its own — bordered, rounded, padded — so this builds the full panel as one static demo covering every real item kind: Label, Item (with shortcut), Separator, CheckboxItem (checked), RadioItem (selected), and a destructive Item (shadcn's actual documented `variant="destructive"`). No shadow/elevation token exists in Phase 0, so none was added (consistent with the other floating surfaces already built). Single Component, no variant axis, no booleans — structural anatomy demo, same treatment as Data Table. |
+| 18 | Empty | [`figma-scripts/18-empty.js`](figma-scripts/18-empty.js) | Header(Media+Title+Description) + Content(action placeholder). EmptyMedia's only confirmed documented variant is `"icon"` (circular muted surface + icon) — modeled directly rather than invented as a Figma Variant axis since no other option names could be verified. Booleans: `Has Description`, `Has Action`. |
 
 No new semantic tokens were needed for any of these — all bind exclusively to existing
 `fg/*`, `bg/*`, `border/*`, `interactive/*`, `surface/*` and `spacing/*`, `radius/*`, `border-width/*` primitives.
 
-Remaining (43, + 9 pending — Bubble, Calendar, Card, Carousel, Chart, Collapsible, Combobox, Command, Context Menu):
-Dropdown Menu, Empty, Field, Hover Card, Input,
+Remaining (41, + 9 pending — Bubble, Calendar, Card, Carousel, Chart, Collapsible, Combobox, Command, Context Menu):
+Field, Hover Card, Input,
 Input Group, Input OTP, Item, Kbd, Label, Marker, Menubar, Message,
 Message Scroller, Native Select, Navigation Menu, Pagination, Popover, Progress,
 Radio Group, Resizable, Scroll Area, Select, Separator, Sheet, Sidebar,
