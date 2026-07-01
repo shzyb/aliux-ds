@@ -108,7 +108,7 @@ primitives; font weight is expressed via Inter's named styles.
 
 ## Phase 1 — Component Loop
 
-Completed: **4 / 61**
+Completed: **6 / 61**
 
 **Bugs found and fixed while building Alert (2026-07-01), in order surfaced:** the original
 script left an incomplete build — only `Style=Default` existed as a loose component (never
@@ -134,12 +134,14 @@ it will hit the same `setTextStyleIdAsync` error the first time it's run in a dy
 | 2 | Alert | [`figma-scripts/02-alert.js`](figma-scripts/02-alert.js) | Icon + Title/Description text column, bordered card. Variant `Style`: Default/Destructive (only text/icon color changes — border & background stay the same, matching shadcn's actual CVA classes). Booleans: `Has Icon`, `Has Description`. Icon is a generic stroked circle placeholder, not a specific Lucide icon. |
 | 3 | Alert Dialog | [`figma-scripts/03-alert-dialog.js`](figma-scripts/03-alert-dialog.js) | Header (Title+Description) + Footer (Cancel/Action) card. No variant axis — shadcn's AlertDialog has no documented `variant` prop, so this is a single Component rather than a ComponentSet. Boolean: `Has Description`. Cancel/Action are plain styled placeholders (not Button instances — Button hasn't been built yet in the loop). Flagged: Title uses `Heading/H4` (20px/Semibold) as the nearest existing text style to shadcn's actual 18px/Semibold — Phase 0b has no 18px+Semibold combination. |
 | 4 | Aspect Ratio | [`figma-scripts/04-aspect-ratio.js`](figma-scripts/04-aspect-ratio.js) | Single placeholder rectangle constrained to a ratio. Variant `Ratio`: 1:1/4:3/16:9/21:9 — shadcn's actual `ratio` prop takes an arbitrary number, modeled here as the common documented ratios since Figma variants need concrete dimensions. No booleans. |
+| 5 | Avatar | [`figma-scripts/05-avatar.js`](figma-scripts/05-avatar.js) | Circular Image placeholder layered over an always-present Fallback (initials) — toggling `Has Image` off reveals the fallback, avoiding the need for an inverse boolean. Variant `Size`: Sm(24)/Default(32)/Lg(40), matching shadcn's documented `size-6`/`size-8`/`size-10` scale. Boolean: `Has Image`. Flagged: fallback initials use one fixed text style at every size rather than scaling with avatar size. |
+| 6 | Attachment | [`figma-scripts/06-attachment.js`](figma-scripts/06-attachment.js) | Media thumbnail + Title/Description + Actions card. Deliberately scoped down: shadcn's real Attachment crosses 5 states x 3 sizes x 2 orientations (30 combos) — only `State` (Idle/Uploading/Processing/Error/Done) is modeled as a Variant axis; size and orientation are **not modeled**, flagged in the file header rather than half-building either. Boolean: `Has Actions`. Shimmer/progress animation has no static Figma equivalent, so Uploading/Processing are differentiated by description text/color only. |
 
-No new semantic tokens were needed for any of the four — all bind exclusively to existing
-`fg/*`, `bg/*`, `border/*`, `interactive/*` and `spacing/*`, `radius/*`, `border-width/*` primitives.
+No new semantic tokens were needed for any of the six — all bind exclusively to existing
+`fg/*`, `bg/*`, `border/*`, `interactive/*`, `surface/*` and `spacing/*`, `radius/*`, `border-width/*` primitives.
 
-Remaining (57):
-Attachment, Avatar, Badge,
+Remaining (55):
+Badge,
 Breadcrumb, Bubble, Button, Button Group, Calendar, Card, Carousel, Chart,
 Checkbox, Collapsible, Combobox, Command, Context Menu, Data Table, Date Picker,
 Dialog, Direction, Drawer, Dropdown Menu, Empty, Field, Hover Card, Input,
