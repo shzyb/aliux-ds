@@ -12,6 +12,12 @@
 //
 // Variants: State = Closed / Open (drives chevron rotation + content visibility)
 // Booleans: Show Border (default true), Disabled (default false)
+//
+// Every binding is read back immediately after being set and throws a
+// precise error if it didn't actually take, instead of silently continuing
+// with an unbound value. Re-running deletes any existing same-named
+// "Accordion Item" component set first and rebuilds from scratch, so a
+// previous partial/broken run can never get stuck.
 
 (async () => {
   try {
@@ -55,6 +61,10 @@
           variable
         ),
       ];
+      const bound = node.fills[0] && node.fills[0].boundVariables && node.fills[0].boundVariables.color;
+      if (!bound || bound.id !== variable.id) {
+        throw new Error(`Fill on "${node.name}" did not bind to "${variable.name}".`);
+      }
     }
     function bindStroke(node, variable) {
       node.strokes = [
@@ -64,12 +74,22 @@
           variable
         ),
       ];
+      const bound = node.strokes[0] && node.strokes[0].boundVariables && node.strokes[0].boundVariables.color;
+      if (!bound || bound.id !== variable.id) {
+        throw new Error(`Stroke on "${node.name}" did not bind to "${variable.name}".`);
+      }
     }
     function bindScalar(node, field, variable) {
-      try {
-        node.setBoundVariable(field, variable);
-      } catch (err) {
-        console.error(`[Accordion] Could not bind "${field}":`, err);
+      node.setBoundVariable(field, variable);
+      const bound = node.boundVariables && node.boundVariables[field];
+      if (!bound || bound.id !== variable.id) {
+        throw new Error(`"${field}" on "${node.name}" did not bind to "${variable.name}".`);
+      }
+    }
+    function applyTextStyle(node, style, label) {
+      node.textStyleId = style.id;
+      if (node.textStyleId !== style.id) {
+        throw new Error(`"${node.name}" (${label}) did not take text style "${style.name}".`);
       }
     }
 
@@ -78,9 +98,19 @@
       (n) => n.type === "COMPONENT_SET" && n.name === NAME
     );
     if (existing) {
-      console.log(`[Accordion] Skipped — "${NAME}" already exists (id ${existing.id}).`);
-      figma.notify(`"${NAME}" already exists — skipping.`, { timeout: 4000 });
-      return;
+      existing.remove();
+      console.log(`[Accordion] Removed existing "${NAME}" component set — rebuilding fresh.`);
+    }
+
+    // Clean up any orphaned "State=Closed"/"State=Open" loose components
+    // left behind by a previous run that threw before reaching
+    // combineAsVariants (this is exactly the state a partial failure leaves).
+    const orphans = figma.currentPage.findAll(
+      (n) => n.type === "COMPONENT" && /^State=(Closed|Open)$/.test(n.name)
+    );
+    if (orphans.length) {
+      for (const orphan of orphans) orphan.remove();
+      console.log(`[Accordion] Removed ${orphans.length} orphaned loose component(s) from a previous partial run.`);
     }
 
     await figma.loadFontAsync({ family: "Inter", style: "Regular" });
@@ -143,7 +173,7 @@
       const label = figma.createText();
       label.name = "Label";
       label.characters = "Is it accessible?";
-      label.textStyleId = triggerStyle.id;
+      applyTextStyle(label, triggerStyle, "Label");
       bindFill(label, need(sem, "fg/default"));
       trigger.appendChild(label);
       label.layoutSizingHorizontal = "FILL";
@@ -152,6 +182,10 @@
       trigger.appendChild(chevron);
       chevron.layoutSizingHorizontal = "FIXED";
       chevron.layoutSizingVertical = "FIXED";
+
+      if (trigger.children.length !== 2) {
+        throw new Error(`"Trigger" in "${item.name}" should have 2 children (Label, Chevron) but has ${trigger.children.length}.`);
+      }
 
       // Content (only present in the Open variant; Closed simply omits it)
       if (open) {
@@ -172,10 +206,14 @@
         const desc = figma.createText();
         desc.name = "Description";
         desc.characters = "Yes. It adheres to the WAI-ARIA design pattern.";
-        desc.textStyleId = contentStyle.id;
+        applyTextStyle(desc, contentStyle, "Description");
         bindFill(desc, need(sem, "fg/muted"));
         content.appendChild(desc);
         desc.layoutSizingHorizontal = "FILL";
+
+        if (content.children.length !== 1) {
+          throw new Error(`"Content" in "${item.name}" should have 1 child (Description) but has ${content.children.length}.`);
+        }
       }
 
       // Bottom border (visibility bound to "Show Border" boolean, wired after combine)
@@ -200,6 +238,11 @@
       overlay.y = 0;
       overlay.constraints = { horizontal: "STRETCH", vertical: "STRETCH" };
 
+      const expectedChildren = open ? 4 : 3; // Trigger, [Content], Bottom Border, Disabled Overlay
+      if (item.children.length !== expectedChildren) {
+        throw new Error(`"${item.name}" should have ${expectedChildren} children but has ${item.children.length}.`);
+      }
+
       return item;
     }
 
@@ -208,6 +251,10 @@
 
     const componentSet = figma.combineAsVariants([closed, open], figma.currentPage);
     componentSet.name = NAME;
+
+    if (componentSet.children.length !== 2) {
+      throw new Error(`Combined "${NAME}" should have 2 variants but has ${componentSet.children.length}.`);
+    }
 
     const existingSetCount = figma.currentPage.children.filter(
       (n) => n.type === "COMPONENT_SET"
@@ -221,15 +268,34 @@
     for (const variant of componentSet.children) {
       const border = variant.findOne((n) => n.name === "Bottom Border");
       const overlay = variant.findOne((n) => n.name === "Disabled Overlay");
-      if (border) border.componentPropertyReferences = { visible: showBorderKey };
-      if (overlay) overlay.componentPropertyReferences = { visible: disabledKey };
+      if (!border) throw new Error(`"${variant.name}" is missing its "Bottom Border" node.`);
+      if (!overlay) throw new Error(`"${variant.name}" is missing its "Disabled Overlay" node.`);
+      border.componentPropertyReferences = { visible: showBorderKey };
+      overlay.componentPropertyReferences = { visible: disabledKey };
     }
 
-    const summary = `"${NAME}" created — 2 variants (State: Closed/Open), 2 boolean props (Show Border, Disabled).`;
+    // Final self-check, printed regardless of success, so the console is
+    // always proof of the real end state rather than an assumption.
+    console.log(
+      "[Accordion] Verification report:",
+      componentSet.children.map((variant) => {
+        const label = variant.findOne((n) => n.name === "Label");
+        const border = variant.findOne((n) => n.name === "Bottom Border");
+        return {
+          variant: variant.name,
+          childCount: variant.children.length,
+          labelStyleId: label && label.textStyleId,
+          labelFillBound: !!(label && label.fills[0] && label.fills[0].boundVariables && label.fills[0].boundVariables.color),
+          borderFillBound: !!(border && border.fills[0] && border.fills[0].boundVariables && border.fills[0].boundVariables.color),
+        };
+      })
+    );
+
+    const summary = `"${NAME}" created — 2 variants (State: Closed/Open), 2 boolean props (Show Border, Disabled). All bindings verified.`;
     console.log(summary);
     figma.notify(summary, { timeout: 6000 });
   } catch (err) {
     console.error("[Accordion] Fatal error:", err);
-    figma.notify("Accordion script failed — see console for details.", { error: true, timeout: 6000 });
+    figma.notify(`Accordion script failed: ${err.message}`, { error: true, timeout: 8000 });
   }
 })();

@@ -108,7 +108,21 @@ primitives; font weight is expressed via Inter's named styles.
 
 ## Phase 1 — Component Loop
 
-Completed: **2 / 61**
+Completed: **2 / 61** (Alert re-verified as of the fix below; please re-run and confirm)
+
+**2026-07-01 fix:** the original Alert script left an incomplete build in the file — only
+`Style=Default` existed as a loose component (never wrapped into a "Alert" component set),
+its title used the wrong text style, and its fill wasn't bound to a semantic variable. Root
+cause: the script had no verification, so it likely threw partway through the first variant
+(after the title, before the description) and nothing downstream ever ran or surfaced clearly.
+Both `01-accordion.js` and `02-alert.js` were rewritten to:
+- Read back every fill/stroke/scalar/text-style binding immediately after setting it and throw
+  a precise, named error the instant one doesn't take, instead of continuing silently.
+- Delete-and-rebuild instead of skip on re-run, and also sweep up orphaned loose components
+  (`Style=...`/`State=...`) left behind by a prior partial failure, so re-running always starts
+  from a clean slate.
+- Print a verification report to console on success (variant count, style IDs, bound-variable
+  booleans) so the end state is provable, not assumed.
 
 | # | Component | Script | Anatomy / variants / booleans |
 |---|---|---|---|
