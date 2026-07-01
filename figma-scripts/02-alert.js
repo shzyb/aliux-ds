@@ -86,8 +86,11 @@
         throw new Error(`"${field}" on "${node.name}" did not bind to "${variable.name}".`);
       }
     }
-    function applyTextStyle(node, style, label) {
-      node.textStyleId = style.id;
+    // This file uses dynamic page loading, which blocks the synchronous
+    // "textStyleId =" setter entirely (throws "Cannot call with
+    // documentAccess: dynamic-page") — it must go through the Async method.
+    async function applyTextStyle(node, style, label) {
+      await node.setTextStyleIdAsync(style.id);
       if (node.textStyleId !== style.id) {
         throw new Error(`"${node.name}" (${label}) did not take text style "${style.name}".`);
       }
@@ -161,7 +164,7 @@
       return icon;
     }
 
-    function buildVariant(styleName, titleColorName, descColorName) {
+    async function buildVariant(styleName, titleColorName, descColorName) {
       const root = figma.createComponent();
       root.name = `Style=${styleName}`;
       root.layoutMode = "HORIZONTAL";
@@ -209,7 +212,7 @@
       const title = figma.createText();
       title.name = "Title";
       title.characters = "Success! Your changes have been saved";
-      applyTextStyle(title, titleStyle, "Title");
+      await applyTextStyle(title, titleStyle, "Title");
       bindFill(title, need(sem, titleColorName));
       textColumn.appendChild(title);
       title.layoutSizingHorizontal = "FILL";
@@ -217,7 +220,7 @@
       const description = figma.createText();
       description.name = "Description";
       description.characters = "This is an alert description providing more context.";
-      applyTextStyle(description, descriptionStyle, "Description");
+      await applyTextStyle(description, descriptionStyle, "Description");
       bindFill(description, need(sem, descColorName));
       textColumn.appendChild(description);
       description.layoutSizingHorizontal = "FILL";
@@ -232,8 +235,8 @@
       return root;
     }
 
-    const defaultVariant = buildVariant("Default", "fg/default", "fg/muted");
-    const destructiveVariant = buildVariant("Destructive", "fg/danger", "fg/danger");
+    const defaultVariant = await buildVariant("Default", "fg/default", "fg/muted");
+    const destructiveVariant = await buildVariant("Destructive", "fg/danger", "fg/danger");
 
     const componentSet = figma.combineAsVariants(
       [defaultVariant, destructiveVariant],
